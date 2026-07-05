@@ -6,7 +6,8 @@ import { redirect } from "next/navigation";
 
 import {
   BOOKING_TIME_ZONE,
-  isBookableConsultationSlot
+  isBookableConsultationSlot,
+  isISODateString
 } from "@/lib/booking";
 import {
   createAdminSession,
@@ -25,8 +26,21 @@ function getStringValue(formData: FormData, key: string) {
   return typeof value === "string" ? value.trim() : "";
 }
 
-function redirectToAdmin(key: string, value: string) {
-  redirect(`/admin?${key}=${value}`);
+function getReturnDate(formData: FormData, fallback?: string) {
+  const returnDate = getStringValue(formData, "returnDate") || fallback || "";
+
+  return isISODateString(returnDate) ? returnDate : undefined;
+}
+
+function redirectToAdmin(key: string, value: string, date?: string) {
+  const params = new URLSearchParams();
+  params.set(key, value);
+
+  if (date && isISODateString(date)) {
+    params.set("date", date);
+  }
+
+  redirect(`/admin?${params.toString()}`);
 }
 
 export async function signInAdmin(formData: FormData) {
@@ -56,9 +70,10 @@ export async function blockConsultationSlot(formData: FormData) {
   const date = getStringValue(formData, "date");
   const time = getStringValue(formData, "time");
   const reason = getStringValue(formData, "reason") || null;
+  const returnDate = getReturnDate(formData, date);
 
   if (!isBookableConsultationSlot(date, time)) {
-    redirectToAdmin("slot", "invalid");
+    redirectToAdmin("slot", "invalid", returnDate);
   }
 
   const existingBooking = await prisma.leadInquiry.findUnique({
@@ -75,7 +90,7 @@ export async function blockConsultationSlot(formData: FormData) {
   });
 
   if (existingBooking) {
-    redirectToAdmin("slot", "booked");
+    redirectToAdmin("slot", "booked", returnDate);
   }
 
   try {
@@ -93,24 +108,25 @@ export async function blockConsultationSlot(formData: FormData) {
       error instanceof Prisma.PrismaClientKnownRequestError &&
       error.code === "P2002"
     ) {
-      redirectToAdmin("slot", "already-blocked");
+      redirectToAdmin("slot", "already-blocked", returnDate);
     }
 
     console.error("Unable to block consultation slot", error);
-    redirectToAdmin("slot", "error");
+    redirectToAdmin("slot", "error", returnDate);
   }
 
   revalidatePath("/admin");
   revalidatePath("/contact");
-  redirectToAdmin("slot", "blocked");
+  redirectToAdmin("slot", "blocked", returnDate);
 }
 
 export async function unblockConsultationSlot(formData: FormData) {
   await requireAdminSession();
   const id = getStringValue(formData, "id");
+  const returnDate = getReturnDate(formData);
 
   if (!id) {
-    redirectToAdmin("slot", "invalid");
+    redirectToAdmin("slot", "invalid", returnDate);
   }
 
   try {
@@ -121,21 +137,22 @@ export async function unblockConsultationSlot(formData: FormData) {
     });
   } catch (error) {
     console.error("Unable to unblock consultation slot", error);
-    redirectToAdmin("slot", "error");
+    redirectToAdmin("slot", "error", returnDate);
   }
 
   revalidatePath("/admin");
   revalidatePath("/contact");
-  redirectToAdmin("slot", "unblocked");
+  redirectToAdmin("slot", "unblocked", returnDate);
 }
 
 export async function updateLeadStatus(formData: FormData) {
   await requireAdminSession();
   const id = getStringValue(formData, "id");
   const status = getStringValue(formData, "status");
+  const returnDate = getReturnDate(formData);
 
   if (!id || !leadStatuses.includes(status as LeadStatus)) {
-    redirectToAdmin("lead", "invalid");
+    redirectToAdmin("lead", "invalid", returnDate);
   }
 
   try {
@@ -149,9 +166,9 @@ export async function updateLeadStatus(formData: FormData) {
     });
   } catch (error) {
     console.error("Unable to update lead status", error);
-    redirectToAdmin("lead", "error");
+    redirectToAdmin("lead", "error", returnDate);
   }
 
   revalidatePath("/admin");
-  redirectToAdmin("lead", "updated");
+  redirectToAdmin("lead", "updated", returnDate);
 }

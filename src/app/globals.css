@@ -1173,7 +1173,8 @@ textarea:focus {
 
 .admin-stats,
 .admin-management-grid,
-.admin-calendar {
+.admin-calendar,
+.admin-calendar-section {
   display: grid;
   gap: 16px;
 }
@@ -1220,6 +1221,51 @@ textarea:focus {
   align-items: start;
 }
 
+.admin-calendar-section {
+  gap: 14px;
+}
+
+.admin-calendar-toolbar {
+  display: grid;
+  grid-template-columns: minmax(240px, 1fr) auto auto;
+  gap: 14px;
+  align-items: flex-end;
+  padding: 16px;
+  background: var(--soft);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.admin-calendar-copy {
+  display: grid;
+  gap: 6px;
+}
+
+.admin-calendar-copy p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.admin-date-filter,
+.admin-calendar-nav {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+}
+
+.admin-date-filter label {
+  min-width: 210px;
+}
+
+.button.disabled,
+.button.disabled:hover {
+  color: var(--muted);
+  background: #edf3f6;
+  border-color: var(--line);
+  cursor: not-allowed;
+  transform: none;
+}
+
 .admin-panel {
   display: grid;
   gap: 16px;
@@ -1236,7 +1282,7 @@ textarea:focus {
   display: grid;
   grid-template-columns: minmax(120px, 1fr) minmax(110px, 0.8fr) minmax(160px, 1.3fr) auto;
   gap: 12px;
-  align-items: end;
+  align-items: flex-end;
 }
 
 .admin-slot-form.compact {
@@ -1264,6 +1310,10 @@ textarea:focus {
 
 .admin-calendar {
   grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.admin-calendar.admin-calendar-single {
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .admin-day {
@@ -1294,6 +1344,14 @@ textarea:focus {
   display: grid;
   gap: 10px;
   padding: 12px;
+}
+
+.admin-calendar-single .admin-day-slots {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.admin-calendar-empty {
+  grid-column: 1 / -1;
 }
 
 .admin-slot {
@@ -1521,6 +1579,19 @@ textarea:focus {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .admin-calendar-toolbar {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-date-filter,
+  .admin-calendar-nav {
+    justify-content: flex-start;
+  }
+
+  .admin-calendar-single .admin-day-slots {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .admin-slot-form {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -1620,11 +1691,23 @@ textarea:focus {
   .form-grid,
   .admin-stats,
   .admin-calendar,
+  .admin-calendar-single .admin-day-slots,
   .admin-slot-form,
   .admin-slot-form.compact,
   .admin-status-form,
   .footer-grid {
     grid-template-columns: 1fr;
+  }
+
+  .admin-date-filter,
+  .admin-calendar-nav {
+    flex-wrap: wrap;
+    width: 100%;
+  }
+
+  .admin-date-filter label {
+    min-width: 0;
+    width: 100%;
   }
 
   .date-slot-grid {

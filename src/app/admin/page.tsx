@@ -2,8 +2,11 @@ import type { Metadata } from "next";
 import {
   Ban,
   CalendarClock,
+  ChevronLeft,
+  ChevronRight,
   CheckCircle2,
   Clock3,
+  Filter,
   LockKeyhole,
   LogOut,
   Mail,
@@ -23,7 +26,8 @@ import {
   buildBookableDays,
   getBookableTimesForDate,
   getBookingDateTime,
-  getConsultationTimes
+  getConsultationTimes,
+  type BookableDay
 } from "@/lib/booking";
 import {
   getAdminSession,
@@ -44,6 +48,7 @@ export const dynamic = "force-dynamic";
 
 type AdminSearchParams = {
   auth?: string | string[];
+  date?: string | string[];
   slot?: string | string[];
   lead?: string | string[];
 };
@@ -53,6 +58,7 @@ type AdminPageProps = {
 };
 
 const leadStatuses = ["NEW", "CONTACTED", "QUALIFIED", "WON", "LOST"];
+const calendarFilterDayCount = 12;
 
 const adminMessages = {
   "auth:config": "Admin sign-in is not configured yet.",
@@ -93,6 +99,23 @@ function slotKey(date: string, time: string) {
   return `${date}|${time}`;
 }
 
+function getSelectedCalendarDate(
+  searchParams: AdminSearchParams,
+  days: BookableDay[]
+) {
+  const requestedDate = getFirstParam(searchParams.date);
+
+  if (requestedDate && days.some((day) => day.iso === requestedDate)) {
+    return requestedDate;
+  }
+
+  return days[0]?.iso ?? getBookingDateTime().date;
+}
+
+function getDateHref(date: string) {
+  return `/admin?date=${encodeURIComponent(date)}`;
+}
+
 function formatSubmittedAt(value: Date) {
   return new Intl.DateTimeFormat("en-GB", {
     dateStyle: "medium",
@@ -101,72 +124,104 @@ function formatSubmittedAt(value: Date) {
   }).format(value);
 }
 
-async function getDashboardData() {
-  const days = buildBookableDays(12);
-  const dates = days.map((day) => day.iso);
+async function getDashboardData(days: BookableDay[], selectedDate: string) {
   const today = getBookingDateTime().date;
-  const [bookings, blockedSlots] = await Promise.all([
-    prisma.leadInquiry.findMany({
-      where: {
-        consultationDate: {
-          gte: today
+  const [bookings, calendarBookings, blockedSlots, blockedSlotCount] =
+    await Promise.all([
+      prisma.leadInquiry.findMany({
+        where: {
+          consultationDate: {
+            gte: today
+          },
+          consultationTimeZone: BOOKING_TIME_ZONE
         },
-        consultationTimeZone: BOOKING_TIME_ZONE
-      },
-      orderBy: [
-        {
-          consultationDate: "asc"
+        orderBy: [
+          {
+            consultationDate: "asc"
+          },
+          {
+            consultationTime: "asc"
+          }
+        ],
+        select: {
+          id: true,
+          createdAt: true,
+          name: true,
+          email: true,
+          phone: true,
+          clientType: true,
+          serviceInterest: true,
+          consultationDate: true,
+          consultationTime: true,
+          timeline: true,
+          budgetRange: true,
+          message: true,
+          status: true
+        }
+      }),
+      prisma.leadInquiry.findMany({
+        where: {
+          consultationDate: selectedDate,
+          consultationTimeZone: BOOKING_TIME_ZONE
         },
-        {
+        orderBy: {
           consultationTime: "asc"
-        }
-      ],
-      select: {
-        id: true,
-        createdAt: true,
-        name: true,
-        email: true,
-        phone: true,
-        clientType: true,
-        serviceInterest: true,
-        consultationDate: true,
-        consultationTime: true,
-        timeline: true,
-        budgetRange: true,
-        message: true,
-        status: true
-      }
-    }),
-    prisma.blockedConsultationSlot.findMany({
-      where: {
-        date: {
-          in: dates
         },
-        timeZone: BOOKING_TIME_ZONE
-      },
-      orderBy: [
-        {
-          date: "asc"
-        },
-        {
-          time: "asc"
+        select: {
+          id: true,
+          createdAt: true,
+          name: true,
+          email: true,
+          phone: true,
+          clientType: true,
+          serviceInterest: true,
+          consultationDate: true,
+          consultationTime: true,
+          timeline: true,
+          budgetRange: true,
+          message: true,
+          status: true
         }
-      ],
-      select: {
-        id: true,
-        createdAt: true,
-        date: true,
-        time: true,
-        reason: true,
-        blockedByEmail: true
-      }
-    })
-  ]);
+      }),
+      prisma.blockedConsultationSlot.findMany({
+        where: {
+          date: selectedDate,
+          timeZone: BOOKING_TIME_ZONE
+        },
+        orderBy: [
+          {
+            date: "asc"
+          },
+          {
+            time: "asc"
+          }
+        ],
+        select: {
+          id: true,
+          createdAt: true,
+          date: true,
+          time: true,
+          reason: true,
+          blockedByEmail: true
+        }
+      }),
+      prisma.blockedConsultationSlot.count({
+        where: {
+          date: {
+            gte: today
+          },
+          timeZone: BOOKING_TIME_ZONE
+        },
+      })
+    ]);
 
   return {
+    blockedSlotCount,
     blockedSlots,
     bookings,
-    days
+    calendarBookings,
+    days,
+    selectedDate
   };
 }
 
@@ -244,15 +299,18 @@ type Booking = DashboardData["bookings"][number];
 type BlockedSlot = DashboardData["blockedSlots"][number];
 
 function BlockSlotForm({
+  days = buildBookableDays(calendarFilterDayCount),
   date,
+  defaultDate,
   time,
   compact = false
 }: {
+  days?: BookableDay[];
   date?: string;
+  defaultDate?: string;
   time?: string;
   compact?: boolean;
 }) {
-  const days = buildBookableDays(12);
   const times = getConsultationTimes();
 
   return (
@@ -265,7 +323,7 @@ function BlockSlotForm({
       ) : (
         <label>
           <span>Date</span>
-          <select name="date" required>
+          <select defaultValue={defaultDate} name="date" required>
             {days.map((day) => (
               <option key={day.iso} value={day.iso}>
                 {day.weekday} {day.day} {day.month}
@@ -303,7 +361,13 @@ function BlockSlotForm({
   );
 }
 
-function BookingSlot({ booking }: { booking: Booking }) {
+function BookingSlot({
+  booking,
+  returnDate
+}: {
+  booking: Booking;
+  returnDate: string;
+}) {
   return (
     <article className="admin-slot booked">
       <div className="admin-slot-heading">
@@ -326,7 +390,12 @@ function BookingSlot({ booking }: { booking: Booking }) {
       </div>
       <form action={updateLeadStatus} className="admin-status-form">
         <input name="id" type="hidden" value={booking.id} />
-        <select aria-label="Booking status" name="status" defaultValue={booking.status}>
+        <input name="returnDate" type="hidden" value={returnDate} />
+        <select
+          aria-label="Booking status"
+          name="status"
+          defaultValue={booking.status}
+        >
           {leadStatuses.map((status) => (
             <option key={status} value={status}>
               {status}
@@ -341,7 +410,13 @@ function BookingSlot({ booking }: { booking: Booking }) {
   );
 }
 
-function BlockedSlotCard({ blockedSlot }: { blockedSlot: BlockedSlot }) {
+function BlockedSlotCard({
+  blockedSlot,
+  returnDate
+}: {
+  blockedSlot: BlockedSlot;
+  returnDate: string;
+}) {
   return (
     <article className="admin-slot blocked">
       <div className="admin-slot-heading">
@@ -355,6 +430,7 @@ function BlockedSlotCard({ blockedSlot }: { blockedSlot: BlockedSlot }) {
       </small>
       <form action={unblockConsultationSlot}>
         <input name="id" type="hidden" value={blockedSlot.id} />
+        <input name="returnDate" type="hidden" value={returnDate} />
         <button className="button secondary button-small" type="submit">
           Reopen
         </button>
@@ -385,7 +461,7 @@ function AdminDashboard({
   sessionEmail: string;
 }) {
   const bookingsBySlot = new Map(
-    data.bookings.map((booking) => [
+    data.calendarBookings.map((booking) => [
       slotKey(booking.consultationDate, booking.consultationTime),
       booking
     ])
@@ -399,6 +475,25 @@ function AdminDashboard({
   const newBookingCount = data.bookings.filter(
     (booking) => booking.status === "NEW"
   ).length;
+  const selectedDayIndex = data.days.findIndex(
+    (day) => day.iso === data.selectedDate
+  );
+  const selectedDay = data.days[selectedDayIndex] ?? data.days[0];
+  const previousDay =
+    selectedDayIndex > 0 ? data.days[selectedDayIndex - 1] : null;
+  const nextDay =
+    selectedDayIndex >= 0 && selectedDayIndex < data.days.length - 1
+      ? data.days[selectedDayIndex + 1]
+      : null;
+  const selectedTimes = getBookableTimesForDate(data.selectedDate);
+  const bookedSlotCount = selectedTimes.filter((time) =>
+    bookingsBySlot.has(slotKey(data.selectedDate, time))
+  ).length;
+  const blockedSlotCountForDate = selectedTimes.filter((time) =>
+    blockedBySlot.has(slotKey(data.selectedDate, time))
+  ).length;
+  const openSlotCount =
+    selectedTimes.length - bookedSlotCount - blockedSlotCountForDate;
 
   return (
     <section className="section admin-dashboard">
@@ -435,7 +530,7 @@ function AdminDashboard({
         <article>
           <Ban aria-hidden="true" size={20} />
           <span>Blocked slots</span>
-          <strong>{data.blockedSlots.length}</strong>
+          <strong>{data.blockedSlotCount}</strong>
         </article>
       </div>
 
@@ -445,7 +540,10 @@ function AdminDashboard({
             <Ban aria-hidden="true" size={18} />
             <h2>Block a slot</h2>
           </div>
-          <BlockSlotForm />
+          <BlockSlotForm
+            days={data.days}
+            defaultDate={data.selectedDate}
+          />
         </section>
 
         <section className="admin-panel">
@@ -471,34 +569,135 @@ function AdminDashboard({
         </section>
       </div>
 
-      <div className="admin-calendar">
-        {data.days.map((day) => (
-          <section className="admin-day" key={day.iso}>
+      <section
+        className="admin-calendar-section"
+        aria-labelledby="admin-calendar-title"
+      >
+        <div className="admin-calendar-toolbar">
+          <div className="admin-calendar-copy">
+            <div className="admin-panel-heading">
+              <CalendarClock aria-hidden="true" size={18} />
+              <h2 id="admin-calendar-title">Daily calendar</h2>
+            </div>
+            <p>
+              {selectedDay.weekday} {selectedDay.day} {selectedDay.month}:{" "}
+              {openSlotCount} open, {bookedSlotCount} booked,{" "}
+              {blockedSlotCountForDate} blocked.
+            </p>
+          </div>
+
+          <form className="admin-date-filter" method="get">
+            <label>
+              <span>Date</span>
+              <select defaultValue={data.selectedDate} name="date">
+                {data.days.map((day) => (
+                  <option key={day.iso} value={day.iso}>
+                    {day.weekday} {day.day} {day.month}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <button className="button secondary button-small" type="submit">
+              <span>Filter</span>
+              <Filter aria-hidden="true" size={16} />
+            </button>
+          </form>
+
+          <nav
+            aria-label="Calendar date navigation"
+            className="admin-calendar-nav"
+          >
+            {previousDay ? (
+              <a
+                aria-label={`Show ${previousDay.weekday} ${previousDay.day} ${previousDay.month}`}
+                className="button secondary button-small"
+                href={getDateHref(previousDay.iso)}
+              >
+                <ChevronLeft aria-hidden="true" size={16} />
+                <span>Previous</span>
+              </a>
+            ) : (
+              <span
+                aria-disabled="true"
+                className="button secondary button-small disabled"
+              >
+                <ChevronLeft aria-hidden="true" size={16} />
+                <span>Previous</span>
+              </span>
+            )}
+
+            {nextDay ? (
+              <a
+                aria-label={`Show ${nextDay.weekday} ${nextDay.day} ${nextDay.month}`}
+                className="button secondary button-small"
+                href={getDateHref(nextDay.iso)}
+              >
+                <span>Next</span>
+                <ChevronRight aria-hidden="true" size={16} />
+              </a>
+            ) : (
+              <span
+                aria-disabled="true"
+                className="button secondary button-small disabled"
+              >
+                <span>Next</span>
+                <ChevronRight aria-hidden="true" size={16} />
+              </span>
+            )}
+          </nav>
+        </div>
+
+        <div className="admin-calendar admin-calendar-single">
+          <section className="admin-day admin-day-focused">
             <header>
-              <span>{day.weekday}</span>
-              <strong>{day.day}</strong>
-              <small>{day.month}</small>
+              <span>{selectedDay.weekday}</span>
+              <strong>{selectedDay.day}</strong>
+              <small>{selectedDay.month}</small>
             </header>
             <div className="admin-day-slots">
-              {getBookableTimesForDate(day.iso).map((time) => {
-                const key = slotKey(day.iso, time);
-                const booking = bookingsBySlot.get(key);
-                const blockedSlot = blockedBySlot.get(key);
+              {selectedTimes.length > 0 ? (
+                selectedTimes.map((time) => {
+                  const key = slotKey(data.selectedDate, time);
+                  const booking = bookingsBySlot.get(key);
+                  const blockedSlot = blockedBySlot.get(key);
 
-                if (booking) {
-                  return <BookingSlot booking={booking} key={key} />;
-                }
+                  if (booking) {
+                    return (
+                      <BookingSlot
+                        booking={booking}
+                        key={key}
+                        returnDate={data.selectedDate}
+                      />
+                    );
+                  }
 
-                if (blockedSlot) {
-                  return <BlockedSlotCard blockedSlot={blockedSlot} key={key} />;
-                }
+                  if (blockedSlot) {
+                    return (
+                      <BlockedSlotCard
+                        blockedSlot={blockedSlot}
+                        key={key}
+                        returnDate={data.selectedDate}
+                      />
+                    );
+                  }
 
-                return <FreeSlot date={day.iso} key={key} time={time} />;
-              })}
+                  return (
+                    <FreeSlot
+                      date={data.selectedDate}
+                      key={key}
+                      time={time}
+                    />
+                  );
+                })
+              ) : (
+                <p className="admin-empty admin-calendar-empty">
+                  No remaining slots are available for this date.
+                </p>
+              )}
             </div>
           </section>
-        ))}
-      </div>
+        </div>
+      </section>
     </section>
   );
 }
@@ -519,7 +718,9 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
     );
   }
 
-  const data = await getDashboardData();
+  const days = buildBookableDays(calendarFilterDayCount);
+  const selectedDate = getSelectedCalendarDate(resolvedSearchParams, days);
+  const data = await getDashboardData(days, selectedDate);
 
   return (
     <AdminDashboard

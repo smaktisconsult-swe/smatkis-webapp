@@ -1,7 +1,13 @@
 import type { Metadata } from "next";
-import { Mail, MapPin, Phone } from "lucide-react";
+import { CircleAlert, Mail, MapPin, Phone } from "lucide-react";
 
 import { ContactForm } from "@/components/ContactForm";
+import {
+  BOOKING_TIME_ZONE,
+  getBookingDateTime,
+  type UnavailableConsultationSlot
+} from "@/lib/booking";
+import { prisma } from "@/lib/prisma";
 
 export const metadata: Metadata = {
   title: "Book a Consultation",
@@ -9,7 +15,90 @@ export const metadata: Metadata = {
     "Book a 30-minute consultation slot with SmaKTis Consultancy for academic, research, teaching, workshop, or biotech R&D support."
 };
 
-export default function ContactPage() {
+export const dynamic = "force-dynamic";
+
+type ContactPageProps = {
+  searchParams?: Promise<ContactPageSearchParams>;
+};
+
+type ContactPageSearchParams = {
+  booking?: string | string[];
+};
+
+const bookingMessages = {
+  invalid: "Please choose a valid future weekday consultation slot.",
+  unavailable:
+    "That consultation slot has just been booked. Please choose another available time.",
+  error:
+    "We could not save this consultation request. Please try again or contact SmaKTis directly."
+};
+
+async function getUnavailableConsultationSlots(): Promise<UnavailableConsultationSlot[]> {
+  try {
+    const today = getBookingDateTime().date;
+    const [bookedSlots, blockedSlots] = await Promise.all([
+      prisma.leadInquiry.findMany({
+        where: {
+          consultationDate: {
+            gte: today
+          },
+          consultationTimeZone: BOOKING_TIME_ZONE
+        },
+        select: {
+          consultationDate: true,
+          consultationTime: true
+        }
+      }),
+      prisma.blockedConsultationSlot.findMany({
+        where: {
+          date: {
+            gte: today
+          },
+          timeZone: BOOKING_TIME_ZONE
+        },
+        select: {
+          date: true,
+          time: true
+        }
+      })
+    ]);
+
+    return [
+      ...bookedSlots.map((slot) => ({
+        date: slot.consultationDate,
+        time: slot.consultationTime,
+        label: "Booked"
+      })),
+      ...blockedSlots.map((slot) => ({
+        date: slot.date,
+        time: slot.time,
+        label: "Unavailable"
+      }))
+    ];
+  } catch (error) {
+    console.error("Unable to load unavailable consultation slots", error);
+    return [];
+  }
+}
+
+function getBookingMessage(booking: string | string[] | undefined) {
+  const key = Array.isArray(booking) ? booking[0] : booking;
+
+  if (key === "invalid" || key === "unavailable" || key === "error") {
+    return bookingMessages[key];
+  }
+
+  return null;
+}
+
+export default async function ContactPage({ searchParams }: ContactPageProps) {
+  const unavailableSlotsPromise = getUnavailableConsultationSlots();
+  const resolvedSearchParams: ContactPageSearchParams = searchParams
+    ? await searchParams
+    : {};
+  const unavailableSlots = await unavailableSlotsPromise;
+  const bookingMessage = getBookingMessage(resolvedSearchParams.booking);
+
   return (
     <>
       <section className="page-hero compact-hero">
@@ -23,7 +112,16 @@ export default function ContactPage() {
       </section>
 
       <section className="section contact-layout">
-        <ContactForm />
+        <div className="contact-form-stack">
+          {bookingMessage ? (
+            <div className="form-alert" role="alert">
+              <CircleAlert aria-hidden="true" size={20} />
+              <p>{bookingMessage}</p>
+            </div>
+          ) : null}
+
+          <ContactForm unavailableSlots={unavailableSlots} />
+        </div>
 
         <aside className="contact-panel">
           <h2>Direct contact</h2>

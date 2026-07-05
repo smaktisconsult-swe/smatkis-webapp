@@ -1,8 +1,11 @@
+-- CreateEnum
+CREATE TYPE "LeadStatus" AS ENUM ('NEW', 'CONTACTED', 'QUALIFIED', 'WON', 'LOST');
+
 -- CreateTable
 CREATE TABLE "LeadInquiry" (
-    "id" TEXT NOT NULL PRIMARY KEY,
-    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" DATETIME NOT NULL,
+    "id" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
     "name" TEXT NOT NULL,
     "email" TEXT NOT NULL,
     "phone" TEXT,
@@ -13,12 +16,14 @@ CREATE TABLE "LeadInquiry" (
     "message" TEXT NOT NULL,
     "consent" BOOLEAN NOT NULL DEFAULT true,
     "source" TEXT NOT NULL DEFAULT 'website',
-    "status" TEXT NOT NULL DEFAULT 'NEW'
+    "status" "LeadStatus" NOT NULL DEFAULT 'NEW',
+
+    CONSTRAINT "LeadInquiry_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
 CREATE TABLE "ServiceOffering" (
-    "id" TEXT NOT NULL PRIMARY KEY,
+    "id" TEXT NOT NULL,
     "slug" TEXT NOT NULL,
     "title" TEXT NOT NULL,
     "audience" TEXT NOT NULL,
@@ -26,24 +31,28 @@ CREATE TABLE "ServiceOffering" (
     "startingFrom" TEXT,
     "displayOrder" INTEGER NOT NULL DEFAULT 0,
     "isPublished" BOOLEAN NOT NULL DEFAULT true,
-    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" DATETIME NOT NULL
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "ServiceOffering_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
 CREATE TABLE "Testimonial" (
-    "id" TEXT NOT NULL PRIMARY KEY,
+    "id" TEXT NOT NULL,
     "clientType" TEXT NOT NULL,
     "quote" TEXT NOT NULL,
     "attribution" TEXT NOT NULL,
     "isPublished" BOOLEAN NOT NULL DEFAULT false,
-    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" DATETIME NOT NULL
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Testimonial_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
 CREATE TABLE "ResourcePost" (
-    "id" TEXT NOT NULL PRIMARY KEY,
+    "id" TEXT NOT NULL,
     "slug" TEXT NOT NULL,
     "title" TEXT NOT NULL,
     "excerpt" TEXT NOT NULL,
@@ -51,8 +60,10 @@ CREATE TABLE "ResourcePost" (
     "readMinutes" INTEGER NOT NULL,
     "body" TEXT NOT NULL,
     "isPublished" BOOLEAN NOT NULL DEFAULT true,
-    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" DATETIME NOT NULL
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "ResourcePost_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex

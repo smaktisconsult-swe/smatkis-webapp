@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -26,6 +26,22 @@ model LeadInquiry {
   consent         Boolean    @default(true)
   source          String     @default("website")
   status          LeadStatus @default(NEW)
+
+  @@unique([consultationDate, consultationTime, consultationTimeZone], name: "LeadInquiry_consultation_slot_key")
+}
+
+model BlockedConsultationSlot {
+  id             String   @id @default(cuid())
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  date           String
+  time           String
+  timeZone       String   @default("Europe/Stockholm")
+  reason         String?
+  blockedByEmail String?
+
+  @@unique([date, time, timeZone], name: "BlockedConsultationSlot_slot_key")
+  @@index([date, time])
 }
 
 model ServiceOffering {

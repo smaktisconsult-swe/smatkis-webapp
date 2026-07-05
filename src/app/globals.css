@@ -812,6 +812,33 @@ button.button {
   padding: 20px;
 }
 
+.contact-form-stack {
+  display: grid;
+  min-width: 0;
+  gap: 16px;
+}
+
+.form-alert {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 14px 16px;
+  color: var(--blue-deep);
+  background: #fff5df;
+  border: 1px solid rgba(216, 155, 43, 0.32);
+  border-radius: var(--radius);
+}
+
+.form-alert svg {
+  flex: 0 0 auto;
+  margin-top: 2px;
+  color: var(--gold);
+}
+
+.form-alert p {
+  margin: 0;
+}
+
 .booking-picker {
   display: grid;
   min-width: 0;
@@ -909,6 +936,22 @@ button.button {
   place-items: center;
   padding: 8px 10px;
   font-weight: 850;
+}
+
+.time-slot small {
+  color: inherit;
+  font-size: 0.68rem;
+  line-height: 1;
+  opacity: 0.82;
+}
+
+.time-slot.disabled,
+.time-slot.disabled:hover {
+  color: var(--muted);
+  background: #edf3f6;
+  border-color: var(--line);
+  cursor: not-allowed;
+  transform: none;
 }
 
 .time-slot input {
@@ -1069,6 +1112,272 @@ textarea:focus {
   color: var(--green);
 }
 
+.admin-auth-section,
+.admin-dashboard {
+  max-width: var(--max);
+  margin: 0 auto;
+  padding-right: clamp(18px, 4vw, 48px);
+  padding-left: clamp(18px, 4vw, 48px);
+}
+
+.admin-login {
+  display: grid;
+  gap: 16px;
+  max-width: 520px;
+  margin: 0 auto;
+  padding: 28px;
+  background: var(--soft);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.admin-login > svg {
+  color: var(--teal);
+}
+
+.admin-login h1,
+.admin-topbar h1,
+.admin-panel h2 {
+  margin: 0;
+  color: var(--blue-deep);
+  line-height: 1.15;
+}
+
+.admin-login p,
+.admin-topbar p,
+.admin-empty {
+  margin: 0;
+  color: var(--muted);
+}
+
+.admin-login-form {
+  display: grid;
+  gap: 14px;
+}
+
+.admin-dashboard {
+  display: grid;
+  gap: 22px;
+}
+
+.admin-topbar {
+  display: flex;
+  gap: 18px;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.admin-message {
+  max-width: 780px;
+}
+
+.admin-stats,
+.admin-management-grid,
+.admin-calendar {
+  display: grid;
+  gap: 16px;
+}
+
+.admin-stats {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.admin-stats article,
+.admin-panel,
+.admin-day {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: 0 10px 30px rgba(10, 39, 59, 0.05);
+}
+
+.admin-stats article {
+  display: grid;
+  gap: 5px;
+  padding: 18px;
+}
+
+.admin-stats svg,
+.admin-panel-heading svg {
+  color: var(--teal);
+}
+
+.admin-stats span,
+.admin-slot small,
+.admin-booking-list small {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.admin-stats strong {
+  color: var(--blue-deep);
+  font-size: 1.9rem;
+  line-height: 1.05;
+}
+
+.admin-management-grid {
+  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+  align-items: start;
+}
+
+.admin-panel {
+  display: grid;
+  gap: 16px;
+  padding: 20px;
+}
+
+.admin-panel-heading {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.admin-slot-form {
+  display: grid;
+  grid-template-columns: minmax(120px, 1fr) minmax(110px, 0.8fr) minmax(160px, 1.3fr) auto;
+  gap: 12px;
+  align-items: end;
+}
+
+.admin-slot-form.compact {
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+}
+
+.admin-slot-form.compact label span {
+  font-size: 0.72rem;
+}
+
+.admin-booking-list {
+  display: grid;
+  gap: 10px;
+}
+
+.admin-booking-list article {
+  display: grid;
+  gap: 2px;
+  padding: 10px 12px;
+  background: var(--soft);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.admin-calendar {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.admin-day {
+  overflow: hidden;
+}
+
+.admin-day header {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 8px;
+  align-items: center;
+  padding: 14px 16px;
+  color: var(--paper);
+  background: var(--blue-deep);
+}
+
+.admin-day header span,
+.admin-day header small {
+  font-weight: 800;
+}
+
+.admin-day header strong {
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
+.admin-day-slots {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+}
+
+.admin-slot {
+  display: grid;
+  gap: 9px;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.admin-slot.booked {
+  background: #eef8fb;
+  border-color: rgba(15, 117, 111, 0.28);
+}
+
+.admin-slot.blocked {
+  background: #fff5df;
+  border-color: rgba(216, 155, 43, 0.34);
+}
+
+.admin-slot.free {
+  background: var(--soft);
+}
+
+.admin-slot-heading,
+.admin-contact-lines {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.admin-slot-heading strong {
+  color: var(--blue-deep);
+}
+
+.admin-slot-heading span {
+  padding: 3px 7px;
+  color: var(--blue-deep);
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  font-size: 0.72rem;
+  font-weight: 850;
+}
+
+.admin-slot h3,
+.admin-slot p {
+  margin: 0;
+}
+
+.admin-slot h3 {
+  color: var(--blue-deep);
+  font-size: 1rem;
+}
+
+.admin-slot p {
+  color: #344c5c;
+  font-size: 0.9rem;
+}
+
+.admin-contact-lines {
+  align-items: flex-start;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+
+.admin-contact-lines a {
+  display: inline-flex;
+  gap: 7px;
+  align-items: center;
+  min-width: 0;
+  color: #344c5c;
+  font-size: 0.85rem;
+  overflow-wrap: anywhere;
+}
+
+.admin-status-form {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+}
+
 .site-footer {
   padding: 54px clamp(18px, 4vw, 48px) 28px;
   color: #d6e6ec;
@@ -1203,8 +1512,17 @@ textarea:focus {
   .service-grid.all-services,
   .resource-grid,
   .resource-grid.large,
-  .service-detail-grid {
+  .service-detail-grid,
+  .admin-management-grid {
     grid-template-columns: 1fr;
+  }
+
+  .admin-calendar {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .admin-slot-form {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .contact-panel {
@@ -1289,6 +1607,7 @@ textarea:focus {
 
   .section-heading.row,
   .cta-band,
+  .admin-topbar,
   .footer-bottom {
     align-items: flex-start;
     flex-direction: column;
@@ -1299,6 +1618,11 @@ textarea:focus {
   .resource-grid,
   .resource-grid.large,
   .form-grid,
+  .admin-stats,
+  .admin-calendar,
+  .admin-slot-form,
+  .admin-slot-form.compact,
+  .admin-status-form,
   .footer-grid {
     grid-template-columns: 1fr;
   }

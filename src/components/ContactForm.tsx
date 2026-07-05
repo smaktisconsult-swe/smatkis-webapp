@@ -2,17 +2,23 @@ import { Send } from "lucide-react";
 
 import { createLead } from "@/app/actions";
 import { BookingSlotPicker } from "@/components/BookingSlotPicker";
+import type { UnavailableConsultationSlot } from "@/lib/booking";
 import { services } from "@/lib/content";
 
 type ContactFormProps = {
   serviceInterest?: string;
   compact?: boolean;
+  unavailableSlots?: UnavailableConsultationSlot[];
 };
 
-export function ContactForm({ serviceInterest = "", compact = false }: ContactFormProps) {
+export function ContactForm({
+  serviceInterest = "",
+  compact = false,
+  unavailableSlots = []
+}: ContactFormProps) {
   return (
     <form className={compact ? "contact-form compact" : "contact-form"} action={createLead}>
-      <BookingSlotPicker />
+      <BookingSlotPicker unavailableSlots={unavailableSlots} />
 
       <div className="form-grid">
         <label>
